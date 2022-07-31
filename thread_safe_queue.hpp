@@ -19,6 +19,12 @@ class Tqueue {
     // 移动函数
     Tqueue(Tqueue&& q) = default;
 
+    // 禁用复制函数，mutex对象不允许复制
+    Tqueue(const Tqueue& q) = delete;
+
+    // 禁用赋值
+    Tqueue& operator=(const Tqueue&) = delete;
+
     void push(const T& elem) {
         std::lock_guard<std::mutex> lock(mutex_);
         q_.push(std::move(elem));
@@ -83,11 +89,6 @@ class Tqueue {
     std::queue<T> q_;
     std::mutex mutex_;
     std::condition_variable cond_;
-
-    // 禁用复制函数，mutex对象不允许复制
-    Tqueue(const Tqueue& q);
-    // 禁用赋值
-    Tqueue& operator=(const Tqueue&);
 };
 
 // 这里的行为都不应该允许

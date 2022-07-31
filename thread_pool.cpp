@@ -22,8 +22,7 @@ class ThreadPool {
                                 if (this->stopped_ && tasks_.empty()) {
                                     return;
                                 }
-                                task = std::move(*(tasks_.front()));
-                                tasks_.WaitAndPop();
+                                task = tasks_.WaitAndPop();
                             }
 
                             task();
@@ -49,6 +48,12 @@ class ThreadPool {
             //std::cerr << "All workers are collected\n";
         }
 
+        // 禁用拷贝
+        ThreadPool(const ThreadPool&) = delete;
+
+        // 禁用赋值
+        ThreadPool& operator=(const ThreadPool&) = delete;
+
         template<class F, class... Args> 
         auto enqueue(F&& f, Args&&... args) 
         -> std::future<typename std::result_of<F(Args...)>::type> {
@@ -69,8 +74,8 @@ class ThreadPool {
                 }
 
                 tasks_.push([task](){ (*task)(); });
+                cond_.notify_one();
             }
-            cond_.notify_one();
 
             return res;
         }
@@ -81,11 +86,6 @@ class ThreadPool {
         std::mutex mutex_;
         std::condition_variable cond_;
         bool stopped_;
-
-        // 禁用拷贝
-        ThreadPool(const ThreadPool&);
-        // 禁用赋值
-        ThreadPool& operator=(const ThreadPool&);
 };
 
 void TestBasicUse() {
